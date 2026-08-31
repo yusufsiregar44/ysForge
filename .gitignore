@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Local, machine-specific overrides (never committed)
+*.local
+.env
+.env.*
