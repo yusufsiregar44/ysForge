@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Symlink ysForge skills and agents into every agent harness on this machine.
+# Symlink ysForge skills, agents and hooks into every harness on this machine.
 #
 # Symlinks, not copies: edit a file in this repo and every harness sees the
 # change immediately, with no build step and no drift.
@@ -89,6 +89,78 @@ link_agents() {
   done
 }
 
+link_hooks() {
+  local target="$1" hook name
+  for hook in "$REPO"/hooks/*.sh; do
+    [ -e "$hook" ] || continue
+    name="$(basename "$hook")"
+    link "$hook" "$target/$name"
+  done
+}
+
+# register_claude_hook <event> <matcher> <command> <status message>
+#
+# Adds one hook entry to ~/.claude/settings.json. Unlike everything else here a
+# hook cannot be a symlink: settings.json is a single file holding per-machine
+# settings this repo has no business owning, so the entry is merged in and every
+# other key is left exactly as it was. Keyed on the command string, so re-runs
+# are no-ops rather than duplicates.
+register_claude_hook() {
+  local event="$1" matcher="$2" cmd="$3" status="$4"
+  local settings="$HOME/.claude/settings.json" tmp entry
+
+  if ! command -v jq >/dev/null 2>&1; then
+    say "  ! conflict  settings.json needs jq to merge $event/$matcher (install jq, or add the entry by hand — see docs/hooks.md)"
+    conflicts=$((conflicts + 1))
+    return 0
+  fi
+
+  if [ -e "$settings" ] && ! jq -e . "$settings" >/dev/null 2>&1; then
+    say "  ! conflict  ${settings/#$HOME/~} is not valid JSON — fix it first, then re-run"
+    conflicts=$((conflicts + 1))
+    return 0
+  fi
+
+  if [ -f "$settings" ] && jq -e --arg e "$event" --arg c "$cmd" \
+      '[.hooks[$e][]?.hooks[]?.command] | any(. == $c)' "$settings" >/dev/null 2>&1; then
+    skipped=$((skipped + 1))                      # already registered
+    return 0
+  fi
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    say "  + would register $event/$matcher in ${settings/#$HOME/~}"
+    linked=$((linked + 1))
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$settings")"
+  [ -f "$settings" ] || printf '{}\n' > "$settings"
+  cp "$settings" "$settings.ysforge.bak"
+
+  entry="$(jq -nc --arg c "$cmd" --arg s "$status" \
+    '{type: "command", command: $c, statusMessage: $s}')"
+  tmp="$(mktemp)"
+
+  # Append into the existing matcher group when there is one, so the event does
+  # not accumulate a second group with the same matcher.
+  if jq --arg e "$event" --arg m "$matcher" --argjson entry "$entry" '
+        .hooks //= {} | .hooks[$e] //= [] |
+        if any(.hooks[$e][]; .matcher == $m)
+        then .hooks[$e] = [ .hooks[$e][]
+               | if .matcher == $m then .hooks += [$entry] else . end ]
+        else .hooks[$e] += [{matcher: $m, hooks: [$entry]}]
+        end
+      ' "$settings" > "$tmp" && jq -e . "$tmp" >/dev/null 2>&1; then
+    mv "$tmp" "$settings"
+    say "  + registered $event/$matcher in ${settings/#$HOME/~}"
+    linked=$((linked + 1))
+  else
+    rm -f "$tmp"
+    say "  ! conflict  could not merge $event/$matcher into ${settings/#$HOME/~} (left unchanged)"
+    conflicts=$((conflicts + 1))
+  fi
+}
+
 say "ysForge  $REPO"
 [ "$DRY_RUN" -eq 1 ] && say "(dry run - nothing will be written)"
 say ""
@@ -105,6 +177,10 @@ if [ -d "$HOME/.claude" ] || command -v claude >/dev/null 2>&1; then
   say "~/.claude  (Claude Code)"
   link_skills "$HOME/.claude/skills"
   link_agents "$HOME/.claude/agents"
+  link_hooks  "$HOME/.claude/hooks"
+  register_claude_hook "PreToolUse" "Agent|Task" \
+    "bash $HOME/.claude/hooks/no-nested-agents.sh" \
+    "Enforcing max agent depth of 1"
 fi
 
 # --- pi --------------------------------------------------------------------

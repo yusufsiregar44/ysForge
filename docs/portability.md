@@ -1,8 +1,8 @@
 # Portability
 
-ysForge holds one copy of each skill and agent. `scripts/install.sh` symlinks
-that copy into whatever each harness expects. This file records what the
-harnesses actually agree on — everything else in the repo follows from it.
+ysForge holds one copy of each skill, agent and hook. `scripts/install.sh`
+symlinks that copy into whatever each harness expects. This file records what
+the harnesses actually agree on — everything else in the repo follows from it.
 
 ## Where each harness looks
 
@@ -11,6 +11,7 @@ harnesses actually agree on — everything else in the repo follows from it.
 | Skills (user) | `~/.claude/skills/` | `~/.agents/skills/` | `~/.agents/skills/`, `~/.pi/agent/skills/` |
 | Skills (repo) | `.claude/skills/` | `.agents/skills/` | `.agents/skills/`, `.pi/skills/` |
 | Agents | `~/.claude/agents/*.md` | not yet verified | `~/.pi/agent/agents/*.md` |
+| Hooks | `~/.claude/settings.json` | not supported | not verified |
 | Instructions | `CLAUDE.md` | `AGENTS.md` | `AGENTS.md` |
 
 **`~/.agents/skills/` is the vendor-neutral path.** Codex and pi both read it
@@ -57,13 +58,28 @@ Less portable, and honestly so:
 
 Write agents so they still work with `name` + `description` and nothing else.
 
-## Deciding between the two
+### Hooks
+
+Not portable at all, and there is no pretending otherwise. There is no
+vendor-neutral hook format and no `~/.agents` equivalent — Claude Code names
+hooks in `settings.json`, Codex has no hook system, and pi's is unverified. So
+`install.sh` wires hooks into Claude Code only, and does it by merging an entry
+into `settings.json` rather than symlinking, since that file holds per-machine
+settings this repo has no business owning.
+
+Keep the *scripts* generic even though the wire-up is not: stdin JSON in, JSON
+decision out, no harness vocabulary in the logic. Then a second harness costs a
+new `register_*` function, not a rewrite. See [hooks.md](hooks.md).
+
+## Deciding between the three
 
 - **Skill** — procedural knowledge loaded into the current context on demand.
   Portable. Prefer it.
 - **Agent** — a separate context with its own budget, for work whose
   intermediate output you do not want back. Less portable. Use when the
   isolation is the point.
+- **Hook** — a rule the harness enforces whether the model cooperates or not.
+  Least portable. Use only when a suggestion genuinely will not do.
 
 ## Sources
 

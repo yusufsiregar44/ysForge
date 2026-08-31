@@ -8,10 +8,26 @@ Codex, pi and anything else that reads the open `SKILL.md` format.
 ```
 skills/<skill-name>/SKILL.md    one directory per skill
 agents/<agent-name>.md          one file per agent
+hooks/<policy>.sh               one script per enforced policy
 templates/                      starting points for both
 scripts/install.sh              symlinks the above into each harness
 docs/portability.md             what the harnesses agree on
+docs/hooks.md                   the policies, and how they get wired
 ```
+
+## Enforced policies
+
+Skills and agents are offered to a model. A hook is run by the harness
+regardless of what the model intends, so hooks are the only rules here that are
+actually enforced. One is active, and it constrains how you work:
+
+**Maximum agent depth of one.** The main session may spawn subagents; a
+subagent may not spawn anything. Do all fan-out from the main session, and never
+write a subagent prompt that asks the worker to delegate further — such a call
+is denied at the tool boundary, not merely discouraged.
+
+Read `docs/hooks.md` before adding or changing a hook, and pipe-test both
+branches before wiring one up.
 
 ## Rules for anything added here
 
