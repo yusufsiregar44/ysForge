@@ -46,24 +46,24 @@ link() {
       "$REPO"/*) : ;;                           # ours, stale target - relink
       *)
         if [ "$FORCE" -eq 0 ]; then
-          say "  ! conflict  ${dest/#$HOME/\~} -> $current (foreign symlink, use --force)"
+          say "  ! conflict  ${dest/#$HOME/~} -> $current (foreign symlink, use --force)"
           conflicts=$((conflicts + 1)); return 0
         fi ;;
     esac
   elif [ -e "$dest" ]; then
     if [ "$FORCE" -eq 0 ]; then
-      say "  ! conflict  ${dest/#$HOME/\~} (real file or directory, use --force)"
+      say "  ! conflict  ${dest/#$HOME/~} (real file or directory, use --force)"
       conflicts=$((conflicts + 1)); return 0
     fi
   fi
 
   if [ "$DRY_RUN" -eq 1 ]; then
-    say "  + would link ${dest/#$HOME/\~}"
+    say "  + would link ${dest/#$HOME/~}"
   else
     mkdir -p "$dest_dir"
     rm -rf "$dest"
     ln -s "$src" "$dest"
-    say "  + linked    ${dest/#$HOME/\~}"
+    say "  + linked    ${dest/#$HOME/~}"
   fi
   linked=$((linked + 1))
 }
