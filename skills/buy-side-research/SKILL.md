@@ -25,6 +25,8 @@ Rank sources by information value. **Tier 1** — filings, transcripts, investor
 
 Lower tiers generate hypotheses. Higher tiers verify them. Alternative data (reviews, traffic, hiring, pricing, patents) is evidence, not truth — always consider selection effects and rival explanations.
 
+Treat every claim inherited from the brief, a prior note, or memory as **unverified until checked against a primary source** — including the premise of the assignment itself. Tag findings verified or unverified, state gaps rather than filling them, and require two independent source trails for any decisive fact. [`references/verification.md`](references/verification.md) carries the full discipline: premise handling, how to decompose the phases into workstreams, and reconciling cross-source contradictions — read it at the start of any run that inherits claims or splits the work.
+
 ## Steps
 
 Work these in order. Detail for every phase referenced below is in [`references/phases.md`](references/phases.md) — read the phases named by the step you are on, not the whole file.
@@ -107,6 +109,7 @@ Before publishing, verify:
 - **Risk** — is the bear case steel-manned, and are kill criteria observable?
 - **Portfolio** — are concentration, hidden correlation, and portfolio role addressed?
 - **Compliance** — is the relevant screen applied?
+- **Anchor data** — is every cross-source contradiction (dates, definitions, figures) reconciled or explicitly flagged?
 - **Saturation** — would another research round change the decision? If not, publish.
 
 ## The arc

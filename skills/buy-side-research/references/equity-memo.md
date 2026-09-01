@@ -17,6 +17,16 @@ Sections 7 and 9 are also the expectations map (Phase 11) and scenario table (Ph
 
 ---
 
+## 0. Anchor Data
+
+Verify the brief's anchor figures against primary sources before analysis. List every cross-source contradiction — resolved (which source won, and why) or flagged unresolved:
+
+- **[Figure]:** [source A, value/date] vs [source B, value/date] — [resolution / unresolved]
+
+Common collisions: prices from different dates; "cash" with and without long-term investments; "debt" that is operating leases; stale price targets; event dates that differ across aggregators.
+
+---
+
 ## 1. Investment View
 
 [2–4 concise paragraphs answering the investment question directly.]
