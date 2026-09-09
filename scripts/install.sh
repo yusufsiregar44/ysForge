@@ -5,22 +5,29 @@
 # Symlinks, not copies: edit a file in this repo and every harness sees the
 # change immediately, with no build step and no drift.
 #
-#   ./scripts/install.sh              install into every harness detected
-#   ./scripts/install.sh --dry-run    print what would happen, change nothing
-#   ./scripts/install.sh --force      replace files this repo does not own
+#   ./scripts/install.sh                     install into every harness detected
+#   ./scripts/install.sh --dry-run           print what would happen, change nothing
+#   ./scripts/install.sh --force             replace files this repo does not own
+#   ./scripts/install.sh --consult-dir PATH  set THIS machine's codex-consult
+#                                            report directory (per-install config,
+#                                            delegates to the skill's configure.sh)
 #
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN=0
 FORCE=0
+CONSULT_DIR=""
 
-for arg in "$@"; do
-  case "$arg" in
-    --dry-run) DRY_RUN=1 ;;
-    --force)   FORCE=1 ;;
-    -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "unknown option: $arg" >&2; exit 2 ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY_RUN=1; shift ;;
+    --force)   FORCE=1; shift ;;
+    --consult-dir)
+      [ $# -ge 2 ] || { echo "error: --consult-dir needs a path" >&2; exit 2; }
+      CONSULT_DIR="$2"; shift 2 ;;
+    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
 
@@ -198,6 +205,24 @@ if [ -d "$HOME/.codex" ] || command -v codex >/dev/null 2>&1; then
   say ""
   say "~/.codex  (Codex)"
   say "  = skills served from ~/.agents/skills; agents not yet supported"
+fi
+
+# --- Per-install configuration ----------------------------------------------
+# Skill settings that differ per machine live outside the repo (see each
+# skill's scripts/configure.sh); the symlinked skill files stay identical.
+CONSULT_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/codex-consult/config"
+if [ -n "$CONSULT_DIR" ]; then
+  say ""
+  say "codex-consult configuration"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    say "  + would set reports dir to $CONSULT_DIR (in ${CONSULT_CFG/#$HOME/~})"
+  else
+    "$REPO/skills/codex-consult/scripts/configure.sh" --dir "$CONSULT_DIR" | sed 's/^/  + /'
+  fi
+elif [ -d "$REPO/skills/codex-consult" ] && [ ! -r "$CONSULT_CFG" ]; then
+  say ""
+  say "note: codex-consult reports default to ~/Documents/codex-consult on this"
+  say "      machine — set a destination with: ./scripts/install.sh --consult-dir PATH"
 fi
 
 say ""

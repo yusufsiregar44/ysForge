@@ -66,12 +66,26 @@ specific questions) and identifies your model by name.
 
 (kebab-case slug, e.g. `order-service-refactor`.) The script handles the
 non-tty hang (`</dev/null`), captures stderr to a sibling `.err` file, applies
-a 10-minute cap, and saves the report to
-`$CODEX_CONSULT_DIR` (default `~/Documents/codex-consult/`) as
-`{timestamp}-{slug}.md`. Overrides via environment: `CODEX_CONSULT_DIR`,
-`CODEX_CONSULT_MODEL` (default `gpt-5.5`), `CODEX_CONSULT_EFFORT` (default
-`high`), `CODEX_CONSULT_TIMEOUT` (default 600s). Set `CODEX_CONSULT_DIR` in
-your shell profile to route reports into a notes vault.
+a 10-minute cap, and saves the report as `{timestamp}-{slug}.md`.
+
+Settings resolve per key: **environment variable → per-machine config file →
+default**. The config file lives at
+`${XDG_CONFIG_HOME:-~/.config}/codex-consult/config` and is written by
+[`scripts/configure.sh`](scripts/configure.sh) — so each installation can set
+its own report destination (e.g. a notes vault) while the skill files stay
+identical everywhere:
+
+```bash
+./scripts/configure.sh --dir ~/path/to/vault/codex-consult   # this machine
+./scripts/configure.sh --show                                # effective config
+```
+
+| Env var | Config key | Default |
+|---|---|---|
+| `CODEX_CONSULT_DIR` | `dir` | `~/Documents/codex-consult` |
+| `CODEX_CONSULT_MODEL` | `model` | `gpt-5.5` |
+| `CODEX_CONSULT_EFFORT` | `effort` | `high` |
+| `CODEX_CONSULT_TIMEOUT` | `timeout` | `600` (empty disables) |
 
 **Done when** the script prints `saved: <path>` and the report is non-empty.
 

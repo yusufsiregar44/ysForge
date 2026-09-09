@@ -9,11 +9,15 @@
 # report to stdout; THIS script saves it — the write happens outside Codex's
 # sandbox, which is why read-only does not block it.
 #
-# Environment overrides:
-#   CODEX_CONSULT_DIR      report directory   (default: ~/Documents/codex-consult)
-#   CODEX_CONSULT_MODEL    codex model        (default: gpt-5.5)
-#   CODEX_CONSULT_EFFORT   reasoning effort   (default: high)
-#   CODEX_CONSULT_TIMEOUT  hard cap, seconds  (default: 600; set empty to disable)
+# Settings resolve per key: environment variable > per-machine config file
+# (${XDG_CONFIG_HOME:-~/.config}/codex-consult/config, written by
+# ./configure.sh) > built-in default.
+#
+#   env var                config key  default
+#   CODEX_CONSULT_DIR      dir         ~/Documents/codex-consult
+#   CODEX_CONSULT_MODEL    model       gpt-5.5
+#   CODEX_CONSULT_EFFORT   effort      high
+#   CODEX_CONSULT_TIMEOUT  timeout     600   (empty value disables the cap)
 #
 set -uo pipefail
 
@@ -25,10 +29,22 @@ SLUG="$1"; PROMPT_FILE="$2"
 [ -r "$PROMPT_FILE" ] || { echo "error: cannot read prompt file: $PROMPT_FILE" >&2; exit 2; }
 command -v codex >/dev/null 2>&1 || { echo "error: codex CLI not found — install it and run 'codex login'" >&2; exit 127; }
 
-DIR="${CODEX_CONSULT_DIR:-$HOME/Documents/codex-consult}"
-MODEL="${CODEX_CONSULT_MODEL:-gpt-5.5}"
-EFFORT="${CODEX_CONSULT_EFFORT:-high}"
-TIMEOUT_SECS="${CODEX_CONSULT_TIMEOUT-600}"
+# Per-machine config (written by ./configure.sh); env vars override it.
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/codex-consult/config"
+cfg() { [ -r "$CONFIG_FILE" ] && sed -n "s/^$1=//p" "$CONFIG_FILE" | tail -1 || true; }
+
+DIR="${CODEX_CONSULT_DIR:-$(cfg dir)}";       DIR="${DIR:-$HOME/Documents/codex-consult}"
+MODEL="${CODEX_CONSULT_MODEL:-$(cfg model)}"; MODEL="${MODEL:-gpt-5.5}"
+EFFORT="${CODEX_CONSULT_EFFORT:-$(cfg effort)}"; EFFORT="${EFFORT:-high}"
+# timeout: a SET-but-empty env var or config value means "no cap", so absence
+# must be distinguished from emptiness at each layer.
+if [ "${CODEX_CONSULT_TIMEOUT+x}" = x ]; then
+  TIMEOUT_SECS="$CODEX_CONSULT_TIMEOUT"
+elif [ -r "$CONFIG_FILE" ] && grep -q '^timeout=' "$CONFIG_FILE"; then
+  TIMEOUT_SECS="$(cfg timeout)"
+else
+  TIMEOUT_SECS=600
+fi
 
 OUT="$DIR/$(date +%Y%m%d-%H%M%S)-$SLUG.md"
 ERR="${OUT%.md}.err"
