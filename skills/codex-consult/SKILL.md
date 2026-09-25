@@ -61,7 +61,7 @@ specific questions) and identifies your model by name.
 ### 3. Run the consultation
 
 ```bash
-./scripts/consult.sh <topic-slug> <prompt-file>
+bash ~/.claude/skills/codex-consult/scripts/consult.sh <topic-slug> <prompt-file>
 ```
 
 (kebab-case slug, e.g. `order-service-refactor`.) The script handles the
@@ -76,8 +76,8 @@ its own report destination (e.g. a notes vault) while the skill files stay
 identical everywhere:
 
 ```bash
-./scripts/configure.sh --dir ~/path/to/vault/codex-consult   # this machine
-./scripts/configure.sh --show                                # effective config
+bash ~/.claude/skills/codex-consult/scripts/configure.sh --dir ~/path/to/vault/codex-consult   # this machine
+bash ~/.claude/skills/codex-consult/scripts/configure.sh --show                                # effective config
 ```
 
 | Env var | Config key | Default |
